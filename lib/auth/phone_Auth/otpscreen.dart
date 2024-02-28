@@ -1,4 +1,7 @@
 import 'package:examiapp/auth/phone_Auth/phone_page.dart';
+import 'package:examiapp/utils/appColors.dart';
+import 'package:examiapp/utils/padding.dart';
+import 'package:examiapp/utils/spinKit.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
@@ -7,8 +10,9 @@ import '../../pages/homepage.dart';
 import '../authbutton.dart';
 
 TextEditingController phoneNumber = TextEditingController();
+bool loading = false;
 
-class OtpScreen extends StatelessWidget{
+class OtpScreen extends StatefulWidget{
 
   String verificationId="";
   String phoneNumber="";
@@ -16,84 +20,110 @@ class OtpScreen extends StatelessWidget{
 
   OtpScreen({required this.verificationId, required this.phoneNumber, required this.userName});
 
+  @override
+  State<OtpScreen> createState() => _OtpScreenState();
+}
+
+class _OtpScreenState extends State<OtpScreen> {
   TextEditingController smsCode = TextEditingController();
 
   @override
   Widget build(BuildContext context){
     return  Scaffold(
       body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TextFormField(
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(20)),
-                label: Text("OTP"),
-                prefixIcon: Icon(Icons.phone_android_rounded),
+        child: Padding(
+          padding: AppPadding.sidePadding,
+          child: Column(
+            children: [
+              SizedBox(height: 70,),
+              Text("Verify Phone",style: TextStyle(fontSize: 30,fontWeight: FontWeight.bold),),
+              Text("Code has been sent to ${widget.phoneNumber}",style: TextStyle(color: AppColors.lightText),),
+              SizedBox(height: 40,),
+              //otp text field
+              TextFormField(
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20)),
+                  label: Text("6 Digit code"),
+                  prefixIcon: Icon(Icons.phone_android_rounded),
+                ),
+                controller: smsCode,
+                //checking input
+                validator: (value) {
+                  if (value!= null) {
+                    return 'Please enter valid mobile number';
+                  }
+                  return null;
+                },
               ),
-              controller: smsCode,
-              //checking input
-              validator: (value) {
-                if (value!= null) {
-                  return 'Please enter valid mobile number';
-                }
-                return null;
-              },
-            ),
 
-            SizedBox(height: 20,),
-            AuthButton("Verify OTP",() => onVerify(context,smsCode.text, verificationId, phoneNumber, userName), ),
-          ],
+              SizedBox(height: 50,),
+
+              loading==false?
+              AuthButton("Verify OTP",() => onVerify(context,smsCode.text, widget.verificationId, widget.phoneNumber, widget.userName), ):
+
+                  //loading kit from utils
+              SpinKit(),
+            ],
+          ),
         ),
       ),
     );
   }
-}
+  //functions
+  onVerify(BuildContext context, String smsCode, String verificationId, String phoneNumber, String userName){
 
-//functions
-onVerify(BuildContext context, String smsCode, String verificationId, String phoneNumber, String userName){
+    setState(() {
+      loading=true;
+    });
+    final credential = PhoneAuthProvider.credential(
+      smsCode: smsCode,
+      verificationId: verificationId,);
+    try{
+      FirebaseAuth.instance.signInWithCredential(credential).then((value){
+        setState(() {
+          loading=true;
+        });
+        //on sucess code
+        Navigator.push(context, MaterialPageRoute(builder: (context) => HomePage(),));
+        // saving user details
+        saveUser();
+        setState(() {
+          loading=false;
+        });
+      }).catchError((error){
+        setState(() {
+          loading=false;
+        });
+        print("$error");
+      });
 
-  final credential = PhoneAuthProvider.credential(
-    smsCode: smsCode,
-    verificationId: verificationId,
 
-  );
-  try{
-    FirebaseAuth.instance.signInWithCredential(credential);
 
-    // saving user details
-    saveUser();
 
-    Navigator.push(context, MaterialPageRoute(builder: (context) => HomePage(),));
 
-  }catch(e){
-    print("${e}");
+    }catch(e){
+      print("${e}");
+    }
   }
 
 }
 
 
-saveUser(){
-  String id = DateTime.now().millisecondsSinceEpoch.toString();
 
-  //storing date and time , package used intl
+saveUser(){
+  String? uid = FirebaseAuth.instance.currentUser?.uid.toString();
+
   String currentDate = DateFormat('dd-MM-yyyy').format(DateTime.now()).toString();
   String currentTime = DateFormat('hh:mm a').format(DateTime.now()).toString();
 
-  final userNode = FirebaseDatabase.instance.ref("USER/phone_User");
-  userNode.child(id.toString()).set(userData).then((value) => print("Data added successfully"));
+  final userNode = FirebaseDatabase.instance.ref("Users");
+  userNode.child(uid.toString()).set(userDataPhone)
+      .then((value) => print("Data added successfully"))
+      .catchError((error){
+        print("$error");
+      });
 
-/*
-  final usersNode = FirebaseDatabase.instance.ref("User");
-  usersNode.child(id.toString()).set({
-    "Name": userName.toString(),
-    "phone_Number": phoneNumber.toString(),
-    "Date": currentDate.toString(),
-    "Time": currentTime.toString(),
-  }).then((value){
-    print("Data saved sucessfully");
-  });*/
+
 }

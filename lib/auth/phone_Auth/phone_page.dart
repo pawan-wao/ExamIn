@@ -1,12 +1,15 @@
 import 'package:examiapp/auth/email_auth/signup.dart';
 import 'package:examiapp/auth/phone_Auth/otpscreen.dart';
+import 'package:examiapp/auth/squarebox.dart';
 import 'package:examiapp/pages/homepage.dart';
 import 'package:examiapp/utils/appColors.dart';
 import 'package:examiapp/utils/padding.dart';
+import 'package:examiapp/utils/spinKit.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:examiapp/auth/authbutton.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:intl/intl.dart';
 
 TextEditingController phoneNumber = TextEditingController();
 TextEditingController userName = TextEditingController();
@@ -17,6 +20,7 @@ bool loading = false;
 class PhonePage extends StatefulWidget {
   @override
   State<PhonePage> createState() => _PhonePageState();
+
 }
 
 class _PhonePageState extends State<PhonePage> {
@@ -29,13 +33,24 @@ class _PhonePageState extends State<PhonePage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
+            //skip this page --> home page
+           Align(
+             alignment: Alignment.topRight,
+             child: GestureDetector(
+               onTap: (){
+                 Navigator.push(context, MaterialPageRoute(builder: (context) => HomePage()));
+               },
+               child: Text("Skip",style: TextStyle(color: AppColors.iconColors, fontSize: 15,),),
+             ),
+           ),
+
             SizedBox(height: 70,),
             // Display
             Row(
               children: [
                 Icon(Icons.chat_bubble, color: Colors.lightBlueAccent,),
                 SizedBox(width: 12,),
-                Text("ExamIn", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 30),),
+                Text("PlaciPrep", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 30),),
               ],
             ),
             SizedBox(height: 20,),
@@ -117,79 +132,103 @@ class _PhonePageState extends State<PhonePage> {
               ],
             ),
             SizedBox(
-              height: 40,
+              height: 50,
             ),
 
             //submit, next button
             Center(child:
                 loading == false ?
-            AuthButton("Next", () => onNext(context),):
-                SpinKitThreeBounce(
-                  color: AppColors.iconColors, // Customize the color
-                  size: 40.0,
-                  duration: Duration(milliseconds: 1000),// Customize the size
-                ),
+             AuthButton("Next", () => onNext(context),):
+                //loading widget from utils
+                SpinKit(),
             ),
 
-            SizedBox(height: 50,),
-            //skip & choose e-Mail
+            SizedBox(height: 40,),
             Row(
               children: [
-                // Skip button
-                GestureDetector(
-                  onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => HomePage()));
-                  },
-                  child: Text("Skip"),
+                Expanded(
+                  child: Divider(
+                    color: Colors.grey.shade400,
+                  ),
                 ),
-                Spacer(),
+                Text(
+                  "Or continue with",
+                  style: TextStyle(color: Colors.black54),
+                ),
+                Expanded(
+                  child: Divider(
+                    color: Colors.grey.shade400,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 25,),
+            //skip & choose e-Mail
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(width: 20,),
                 // Go with e-Mail button
                 GestureDetector(
                   onTap: () {
                     Navigator.push(context, MaterialPageRoute(builder: (context) => SignUp()));
                   },
-                  child: Text("Go with e-Mail"),
+                  child: SquareBox(Icons.mail),
                 ),
 
               ],
-            )
+            ),
           ],
         ),
       ),
     );
   }
-}
+  onNext(BuildContext context) {
+    setState(() {
+      loading = true;
+    });
+    FirebaseAuth.instance.verifyPhoneNumber(
+      phoneNumber: countryCode.text+phoneNumber.text,
+      verificationCompleted: (_) {},
+      verificationFailed: (e) {
+        print("${e}");
+        setState(() {
+          loading = false;
+        });
 
-onNext(BuildContext context) {
-  setState(() {
-    loading = true;
-  });
-  FirebaseAuth.instance.verifyPhoneNumber(
-    phoneNumber: countryCode.text+phoneNumber.text,
-    verificationCompleted: (_) {},
-    verificationFailed: (e) {
-      print("${e}");
-    },
-    codeSent: (String verificationId, int? token) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => OtpScreen(
-            verificationId: verificationId,
-            phoneNumber: phoneNumber.text,
-            userName: userName.text,
+      },
+      codeSent: (String verificationId, int? token) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => OtpScreen(
+              verificationId: verificationId,
+              phoneNumber: phoneNumber.text,
+              userName: userName.text,
+            ),
           ),
-        ),
-      );
-    },
-    codeAutoRetrievalTimeout: (e) {
-      print("${e}");
-    },
-  );
+        ).then((_) {
+          setState(() {
+            loading = false;
+          });
+        });
+      },
+      codeAutoRetrievalTimeout: (e) {
+        setState(() {
+          loading = false;
+        });
+        print("${e}");
+      },
+    );
+  }
 }
 
-Map<String, dynamic> userData = {
+
+Map<String, dynamic> userDataPhone = {
   "Name": userName.text,
-  "phoneNumber": phoneNumber.text,
-  // Add more key-value pairs as needed
+  "email": phoneNumber.text,
+  "password": '',
+  "Date": DateFormat('dd-MM-yyyy').format(DateTime.now()).toString(),
+  "time": DateFormat('hh:mm a').format(DateTime.now()).toString(),
+  "profileImage": "https://firebasestorage.googleapis.com/v0/b/examiapp-4a318.appspot.com/o/userImagessxWP4pBMW1ccdGkaIJQOzkQLfVK2?alt=media&token=1e17e5a5-1ec5-40f9-bbec-9ec65d81da10",
 };

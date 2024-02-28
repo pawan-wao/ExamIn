@@ -1,3 +1,6 @@
+import 'package:examiapp/ExamPanel/examPage.dart';
+import 'package:examiapp/ExamPanel/resultPage.dart';
+import 'package:examiapp/auth/phone_Auth/otpscreen.dart';
 import 'package:examiapp/auth/phone_Auth/phone_page.dart';
 import 'package:examiapp/widgets/homeScreenWidgets/appbar.dart';
 import 'package:flutter/material.dart';
@@ -21,11 +24,10 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       home: Scaffold(
         backgroundColor: AppColors.backgrounColor,
-        body: SafeArea(
-          child: PhonePage(),
-        ),
+        body: PhonePage(),
       ),
     );
   }

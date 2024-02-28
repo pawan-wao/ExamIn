@@ -10,13 +10,13 @@ Widget AuthButton(String label, var fun){
   return  InkWell(
     onTap: fun,
     child: Container(
-      width: 250,
+      width: 360,
       height: 50,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(25),
         color: Colors.lightBlueAccent,
       ),
-      child: Center(child: Text("Next",style: TextStyle(fontWeight: FontWeight.bold,fontSize: 20),),),
+      child: Center(child: Text(label,style: TextStyle(fontWeight: FontWeight.bold,fontSize: 20),),),
     ),
   );
 }

@@ -18,7 +18,7 @@ Widget testSeries(){
           children: [
             Text("Test Series",style: TextStyle(fontSize: 17,fontWeight: FontWeight.bold),),
             Spacer(),
-            Text("See All", style: TextStyle(),)
+            Text("See All", style: TextStyle(),),
           ],
         ),
         SizedBox(height: 10,),
